@@ -1,9 +1,9 @@
 UMN – Ucup Exploring the Archipelago
 Nama Anggota: 
--
--
--
-- Saviero Alim Pranoto (00000130935)
+
+
+
+Saviero Alim Pranoto (00000130935)
 
 Proyek ini merupakan game simulasi edukasi berbasis web bertajuk “UMN – Ucup Exploring the Archipelago”. Game ini dikembangkan menggunakan HTML, CSS (TailwindCSS + custom style), dan JavaScript
 untuk memberikan pengalaman interaktif kepada pemain dalam menjelajahi berbagai lokasi sambil menjaga status karakter seperti hunger (lapar), sleep (energi), hygiene (kebersihan), dan happiness (kebahagiaan).

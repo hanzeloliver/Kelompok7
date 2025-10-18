@@ -1,9 +1,9 @@
 UMN – Ucup Exploring the Archipelago
 Nama Anggota: 
-
-
-
+Ezequiel Emeralod (00000159857)
+Hanzel Oliver Wihandono (00000093123)
 Saviero Alim Pranoto (00000130935)
+Gustav (00000130003)
 
 Proyek ini merupakan game simulasi edukasi berbasis web bertajuk “UMN – Ucup Exploring the Archipelago”. Game ini dikembangkan menggunakan HTML, CSS (TailwindCSS + custom style), dan JavaScript
 untuk memberikan pengalaman interaktif kepada pemain dalam menjelajahi berbagai lokasi sambil menjaga status karakter seperti hunger (lapar), sleep (energi), hygiene (kebersihan), dan happiness (kebahagiaan).

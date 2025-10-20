@@ -63,6 +63,6 @@ Game “UMN – Ucup Exploring the Archipelago” merupakan simulasi ringan yang
 Dengan logika JavaScript yang sistematis dan desain berbasis TailwindCSS, proyek ini berhasil menghadirkan pengalaman bermain yang sederhana namun edukatif. 
 Game ini dapat dikembangkan lebih lanjut dengan menambahkan sistem quest, inventory, serta mekanik sosial antar karakter.
 
-Link youtube:
+Link youtube: https://www.youtube.com/watch?v=_r8mwhOhURk 
 
-Link OneDrive:
+

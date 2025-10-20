@@ -64,3 +64,5 @@ Dengan logika JavaScript yang sistematis dan desain berbasis TailwindCSS, proyek
 Game ini dapat dikembangkan lebih lanjut dengan menambahkan sistem quest, inventory, serta mekanik sosial antar karakter.
 
 Link youtube:
+
+Link OneDrive:

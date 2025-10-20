@@ -20,7 +20,7 @@
         <div id="selected-avatar-container" class="flex items-center gap-6">
           <img src="images/left.png" alt="Previous Avatar" id="prev-avatar" class="w-10 h-10 cursor-pointer hover:scale-110 transition-transform">
           <img id="avatar-preview" src="images/avatar2.png" alt="Avatar Preview" class="rounded-full border-4 border-blue-500 shadow-lg w-36 h-36 object-cover">
-          <img src="images/right.jpg" alt="Next Avatar" id="next-avatar" class="w-10 h-10 cursor-pointer hover:scale-110 transition-transform">
+          <img src="images/right.png" alt="Next Avatar" id="next-avatar" class="w-10 h-10 cursor-pointer hover:scale-110 transition-transform">
         </div>
       </div>
 
@@ -112,7 +112,7 @@
           <div></div>
           <button id="move-left" class="move-btn"><img src="images/left.png" alt="Left Button" class="w-10 h-10"></button>
           <div></div>
-          <button id="move-right" class="move-btn"><img src="images/right.jpg" alt="Right Button" class="w-10 h-10"></button>
+          <button id="move-right" class="move-btn"><img src="images/right.png" alt="Right Button" class="w-10 h-10"></button>
           <div></div>
           <button id="move-down" class="move-btn"><img src="images/down.png" alt="Down Button" class="w-10 h-10"></button>
         </div>
@@ -121,7 +121,10 @@
 
       <!-- Activity Buttons -->
       <div class="md:w-2/3 bg-blue-50 p-4 rounded-lg shadow-md">
-        <h3 class="text-lg font-semibold mb-4 border-b border-gray-300 pb-2 text-gray-700">Available Activities:</h3>
+        <h3 class="text-lg font-semibold mb-4 border-b border-gray-300 pb-2 text-gray-700"><div class="activities-container">
+  <h2>Available Activities:</h2>
+</div>
+</h3>
         <div id="activity-buttons" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
       </div>
     </div>

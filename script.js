@@ -169,10 +169,10 @@ function createMapMarkers() {
 
     // small logo markers
     let markerSrc = `https://placehold.co/40x40/999/FFF?text=${locationKey}`;
-    if (locationKey === 'Base') markerSrc = 'images/home.jpg';
-    else if (locationKey === 'Beach') markerSrc = 'images/beach.jpg';
-    else if (locationKey === 'Temple') markerSrc = 'images/temple.jpg';
-    else if (locationKey === 'Lake') markerSrc = 'images/lake.jpg';
+    if (locationKey === 'Base') markerSrc = 'images/home.png';
+    else if (locationKey === 'Beach') markerSrc = 'images/beach.png';
+    else if (locationKey === 'Temple') markerSrc = 'images/temple.png';
+    else if (locationKey === 'Lake') markerSrc = 'images/lake.png';
     else if (locationKey === 'Mountain') markerSrc = 'images/mountain.png';
     marker.src = markerSrc;
 

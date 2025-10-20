@@ -9,10 +9,10 @@ const playerStatus = { hunger: 50, sleep: 50, hygiene: 50, happiness: 50, money:
 
 // Avatars
 const availableAvatars = [
-  "//gambar1",
-  "//gambar2",
-  "//gambar3",
-  "//gambar4"
+  "images/avatar1.png",
+  "images/avatar2.png",
+  "images/avatar3.png",
+  "images/avatar4.png"
 ];
 let currentAvatarIndex = 0;
 

@@ -7,7 +7,7 @@ let gameInterval = null, statusInterval = null;
 
 const playerStatus = { hunger: 50, sleep: 50, hygiene: 50, happiness: 50, money: 100 };
 
-// Avatars
+// === Avatar List ===
 const availableAvatars = [
   "images/avatar1.png",
   "images/avatar2.png",
@@ -16,7 +16,7 @@ const availableAvatars = [
 ];
 let currentAvatarIndex = 0;
 
-// Locations & navigation paths
+// === Location Data ===
 const locations = {
   "Base": { name: "Base", coords: { top: "20%", left: "20%" }, up: null, down: "Lake", left: null, right: "Beach", activities: ["eat", "sleep", "clean", "work"] },
   "Beach": { name: "Beach", coords: { top: "20%", left: "80%" }, up: null, down: "Mountain", left: "Base", right: null, activities: ["explore", "swim", "buy_food", "buy_drink"] },
@@ -24,10 +24,9 @@ const locations = {
   "Lake": { name: "Lake", coords: { top: "80%", left: "20%" }, up: "Base", down: null, left: null, right: "Temple", activities: ["fishing", "explore", "swim"] },
   "Mountain": { name: "Mountain", coords: { top: "80%", left: "80%" }, up: "Beach", down: null, left: "Temple", right: null, activities: ["climb", "explore", "meditate"] }
 };
-
 let currentLocation = "Base";
 
-// Activities
+// === Activities ===
 const activities = {
   "eat": { name: "Eat Meal", cost: 0, effects: { hunger: +30, happiness: +5 }, info: "Replenish your hunger at the base." },
   "sleep": { name: "Rest", cost: 0, effects: { sleep: +40, hunger: -5 }, info: "Take a rest to restore energy." },
@@ -44,7 +43,7 @@ const activities = {
   "fishing": { name: "Fishing", cost: 0, effects: { happiness: +10, hunger: +10 }, info: "Try your luck catching fish." }
 };
 
-// DOM References
+// === DOM References ===
 const avatarPreview = document.getElementById("avatar-preview");
 const avatarIndex = document.getElementById("avatar-index");
 const prevAvatar = document.getElementById("prev-avatar");
@@ -66,19 +65,16 @@ const hygieneBar = document.getElementById("hygiene-bar");
 const happinessBar = document.getElementById("happiness-bar");
 const moneyDisplay = document.getElementById("money-display");
 
-const playerIcon = document.getElementById("player-map-icon");
-const playerMapContainer = document.getElementById("player-map-container");
 const mapArea = document.getElementById("map-area");
+const playerMapIconContainer = document.getElementById("player-map-icon-container");
+const playerMapIconImg = document.getElementById("player-map-icon-img");
 
 const moveButtons = document.querySelectorAll(".move-btn");
 const activityButtonsContainer = document.getElementById("activity-buttons");
 const gameOverReason = document.getElementById("game-over-reason");
 const restartButton = document.getElementById("restart-game-button");
 
-// =========================
-// Core Functions
-// =========================
-
+// === Utility Functions ===
 function updateAvatarSelection() {
   playerAvatar = availableAvatars[currentAvatarIndex];
   avatarPreview.src = playerAvatar;
@@ -131,13 +127,14 @@ function updateGameTime() {
   updateGreeting();
 }
 
+// === Activities ===
 function updateActivities() {
   activityButtonsContainer.innerHTML = "";
   const loc = locations[currentLocation];
   loc.activities.forEach(key => {
     const act = activities[key];
     const btn = document.createElement("button");
-    btn.className = "bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition text-sm";
+    btn.className = "activity-btn";
     btn.textContent = act.name;
     btn.onclick = () => performActivity(key);
     activityButtonsContainer.appendChild(btn);
@@ -154,18 +151,74 @@ function performActivity(key) {
   updateStatusBars();
 }
 
+// === MAP SYSTEM ===
+function createMapMarkers() {
+  const oldMarkers = mapArea.querySelectorAll('.map-location');
+  oldMarkers.forEach(m => m.remove());
+
+  for (const locationKey in locations) {
+    const locationData = locations[locationKey];
+    if (!locationData.coords) continue;
+
+    const marker = document.createElement('img');
+    marker.classList.add('map-location');
+    marker.id = `map-loc-${locationKey.toLowerCase()}`;
+    marker.style.top = locationData.coords.top;
+    marker.style.left = locationData.coords.left;
+    marker.alt = locationData.name;
+
+    // small logo markers
+    let markerSrc = `https://placehold.co/40x40/999/FFF?text=${locationKey}`;
+    if (locationKey === 'Base') markerSrc = 'images/home.jpg';
+    else if (locationKey === 'Beach') markerSrc = 'images/beach.jpg';
+    else if (locationKey === 'Temple') markerSrc = 'images/temple.jpg';
+    else if (locationKey === 'Lake') markerSrc = 'images/lake.jpg';
+    else if (locationKey === 'Mountain') markerSrc = 'images/mountain.png';
+    marker.src = markerSrc;
+
+    // klik marker untuk teleport
+    marker.addEventListener('click', () => {
+      currentLocation = locationKey;
+      updatePlayerMapPosition();
+      updateActivities();
+      updateStatusBars();
+    });
+
+    mapArea.appendChild(marker);
+  }
+
+  // tampilkan ikon pemain di atas semua marker
+  mapArea.appendChild(playerMapIconContainer);
+}
+
+function updatePlayerMapPosition() {
+  const locationData = locations[currentLocation];
+  if (locationData && locationData.coords) {
+    playerMapIconContainer.style.top = locationData.coords.top;
+    playerMapIconContainer.style.left = locationData.coords.left;
+    playerMapIconContainer.style.display = "flex";
+  } else {
+    playerMapIconContainer.style.display = "none";
+  }
+}
+
+// === Movement ===
 function movePlayer(direction) {
   const next = locations[currentLocation][direction];
   if (next && locations[next]) {
     currentLocation = next;
-    playerMapContainer.style.top = locations[next].coords.top;
-    playerMapContainer.style.left = locations[next].coords.left;
-    playerMapContainer.classList.add("shake");
-    setTimeout(() => playerMapContainer.classList.remove("shake"), 300);
+    updatePlayerMapPosition();
+    playerMapIconContainer.classList.add("shake");
+    setTimeout(() => playerMapIconContainer.classList.remove("shake"), 300);
     updateActivities();
+    updateStatusBars();
+  } else {
+    playerMapIconContainer.classList.add("shake");
+    setTimeout(() => playerMapIconContainer.classList.remove("shake"), 300);
   }
 }
 
+// === Game State ===
 function checkGameOver() {
   let reason = "";
   if (playerStatus.hunger <= 0) reason = "starvation";
@@ -188,8 +241,11 @@ function startGame() {
   if (!playerName) return alert("Please enter your name first!");
   characterSelectionScreen.classList.add("hidden");
   gameScreen.classList.remove("hidden");
-  playerIcon.src = playerAvatar;
-  playerMapContainer.style.display = "flex";
+
+  playerMapIconImg.src = playerAvatar;
+  createMapMarkers();
+  updatePlayerMapPosition();
+
   updateStatusBars();
   updateActivities();
   updateGreeting();
@@ -211,9 +267,7 @@ function restartGame() {
   updateAvatarSelection();
 }
 
-// =========================
-// Event Listeners
-// =========================
+// === Event Listeners ===
 prevAvatar.addEventListener("click", () => {
   currentAvatarIndex = (currentAvatarIndex - 1 + availableAvatars.length) % availableAvatars.length;
   updateAvatarSelection();
@@ -227,6 +281,6 @@ startButton.addEventListener("click", startGame);
 moveButtons.forEach(btn => btn.addEventListener("click", () => movePlayer(btn.id.split("-")[1])));
 restartButton.addEventListener("click", restartGame);
 
-// Initialize
+// === Initialize App ===
 updateAvatarSelection();
-playerMapContainer.style.display = "none";
+playerMapIconContainer.style.display = "none";

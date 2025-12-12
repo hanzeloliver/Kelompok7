@@ -280,64 +280,43 @@ button:active {
 }
 
 
-/* --- Activity buttons visibility & style --- */
-.activities-container {
-  background-color: #f1f7ff;
-  padding: 20px;
-  border-radius: 10px;
-  max-width: 900px;
-  margin: 20px auto;
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-.activities-container h2 {
-  color: #2a3b5f;
-  margin-bottom: 15px;
-  border-bottom: 2px solid #d0e0ff;
-  padding-bottom: 5px;
-}
-
-.activities {
-  display: flex;
-  justify-content: space-around;
-  flex-wrap: wrap;
-  gap: 15px;
-}
-
-.activity-btn {
-  background-color: #4a90e2;
-  color: #fff;
-  border: none;
-  padding: 12px 22px;
-  border-radius: 10px;
-  font-size: 18px;
+/* Activity markers when inside an area */
+.area-activity {
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-
-.activity-btn:hover,
-.activity-btn:focus {
-  background-color: #357abd;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 14px rgba(0,0,0,0.2);
-  outline: none;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+  padding: 4px;
 }
 
 
+/* Player avatar when inside an area */
+#inside-player {
+  position: absolute;
+  width: 72px;
+  height: 72px;
+  z-index: 6;
+  transform: translate(-50%, -50%);
+  object-fit: contain;
+}
 
-/* === Final Adjustments === */
-.activities-container {
+/* Activity popup next to the inside player */
+#activity-popup {
+  position: absolute;
+  z-index: 7;
+}
+
+/* Button style for activity popup */
+.popup-btn {
+  background-color: #2563eb;
+  color: #ffffff;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: block;
   text-align: center;
+  min-width: 8rem;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.25);
+  border: none;
 }
-
-.activities-container h2 {
-  border: none !important;
-  padding-bottom: 0 !important;
-  margin-bottom: 20px !important;
-}
-
-.activities {
-  justify-content: center !important;
-}
-

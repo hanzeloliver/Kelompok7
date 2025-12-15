@@ -5,6 +5,13 @@
 let playerName = "", playerAvatar = "", currentDay = 1, currentHour = 6, currentMinute = 0;
 let gameInterval = null, statusInterval = null;
 
+// Activity state
+let currentActivity = null;
+let activityStartTime = 0;
+let activityElapsedMinutes = 0;
+let activityInterval = null;
+let activityAnimationFrame = null;
+
 const playerStatus = { hunger: 50, sleep: 50, hygiene: 50, happiness: 50, money: 100 };
 
 // === Avatar List ===
@@ -48,21 +55,103 @@ let currentLocation = "Base";
 
 // === Activities ===
 const activities = {
-  "eat": { name: "Eat Meal", placeLabel: "Kitchen", cost: 0, effects: { hunger: +30, happiness: +5 }, info: "Replenish your hunger at the base." },
-  "sleep": { name: "Rest", placeLabel: "Bedroom", cost: 0, effects: { sleep: +40, hunger: -5 }, info: "Take a rest to restore energy." },
-  "clean": { name: "Take Shower", placeLabel: "Bathroom", cost: 0, effects: { hygiene: +50, happiness: +5 }, info: "Stay clean and fresh." },
-  "work": { name: "Repair Equipment", placeLabel: "Workshop", cost: -20, effects: { hygiene: -15, sleep: -10, happiness: -5 }, info: "Fix your exploration tools." },
-  "explore": { name: "Explore Area", cost: 0, effects: { happiness: +10, sleep: -10, hygiene: -10 }, info: "Discover new parts of the planet." },
-  "swim": { name: "Swim", cost: 0, effects: { happiness: +15, hygiene: +5, sleep: -10 }, info: "Enjoy a swim in the blue water." },
-  "pray": { name: "Pray", cost: 0, effects: { happiness: +15 }, info: "Meditate at the ancient temple." },
-  "meditate": { name: "Meditate", cost: 0, effects: { happiness: +10, sleep: +5 }, info: "Find inner peace." },
-  "help_people": { name: "Help Locals", cost: -30, effects: { happiness: +10, sleep: -10 }, info: "Assist villagers nearby." },
-  "buy_food": { name: "Buy Food", cost: 20, effects: { hunger: +25, happiness: +5 }, info: "Enjoy local delicacies." },
-  "buy_drink": { name: "Buy Drink", cost: 15, effects: { hunger: +5, happiness: +10 }, info: "Have a refreshing drink." },
-  "climb": { name: "Climb Peak", cost: 0, effects: { happiness: +10, sleep: -20, hunger: -10 }, info: "Climb the mountain peak." },
-  "fishing": { name: "Fishing", cost: 0, effects: { happiness: +10, hunger: +10 }, info: "Try your luck catching fish." }
+  "eat": { name: "Eat Meal", placeLabel: "Kitchen", cost: 0, duration: 0.5, effects: { hunger: +30, happiness: +5 }, info: "Replenish your hunger at the base." },
+  "sleep": { name: "Rest", placeLabel: "Bedroom", cost: 0, duration: 1, effects: { sleep: +40, hunger: -5 }, info: "Take a rest to restore energy." },
+  "clean": { name: "Take Shower", placeLabel: "Bathroom", cost: 0, duration: 0.33, effects: { hygiene: +50, happiness: +5 }, info: "Stay clean and fresh." },
+  "work": { name: "Repair Equipment", placeLabel: "Workshop", cost: -20, duration: 1, effects: { hygiene: -15, sleep: -10, happiness: -5 }, info: "Fix your exploration tools." },
+  "explore": { name: "Explore Area", cost: 0, duration: 1, effects: { happiness: +10, sleep: -10, hygiene: -10 }, info: "Discover new parts of the planet." },
+  "swim": { name: "Swim", cost: 0, duration: 0.75, effects: { happiness: +15, hygiene: +5, sleep: -10 }, info: "Enjoy a swim in the blue water." },
+  "pray": { name: "Pray", cost: 0, duration: 0.5, effects: { happiness: +15 }, info: "Meditate at the ancient temple." },
+  "meditate": { name: "Meditate", cost: 0, duration: 0.67, effects: { happiness: +10, sleep: +5 }, info: "Find inner peace." },
+  "help_people": { name: "Help Locals", cost: -30, duration: 1, effects: { happiness: +10, sleep: -10 }, info: "Assist villagers nearby." },
+  "buy_food": { name: "Buy Food", cost: 20, duration: 0.25, effects: { hunger: +25, happiness: +5 }, info: "Enjoy local delicacies." },
+  "buy_drink": { name: "Buy Drink", cost: 15, duration: 0.17, effects: { hunger: +5, happiness: +10 }, info: "Have a refreshing drink." },
+  "climb": { name: "Climb Peak", cost: 0, duration: 1, effects: { happiness: +10, sleep: -20, hunger: -10 }, info: "Climb the mountain peak." },
+  "fishing": { name: "Fishing", cost: 0, duration: 1, effects: { happiness: +10, hunger: +10 }, info: "Try your luck catching fish." }
 };
 
+// === Items Data ===
+const items = {
+  "health_potion": { 
+    name: "Health Potion", 
+    description: "Restores hunger by 20", 
+    price: 50, 
+    effects: { hunger: +20 }, 
+    icon: "🧪",
+    consumable: true 
+  },
+  "energy_drink": { 
+    name: "Energy Drink", 
+    description: "Restores sleep by 25", 
+    price: 40, 
+    effects: { sleep: +25 }, 
+    icon: "⚡",
+    consumable: true 
+  },
+  "soap": { 
+    name: "Luxury Soap", 
+    description: "Restores hygiene by 30", 
+    price: 30, 
+    effects: { hygiene: +30 }, 
+    icon: "🧼",
+    consumable: true 
+  },
+  "happiness_pill": { 
+    name: "Joy Pill", 
+    description: "Restores happiness by 25", 
+    price: 60, 
+    effects: { happiness: +25 }, 
+    icon: "💊",
+    consumable: true 
+  },
+  "fishing_rod": { 
+    name: "Fishing Rod", 
+    description: "Unlocks better fishing rewards", 
+    price: 150, 
+    effects: {}, 
+    icon: "🎣",
+    consumable: false,
+    unlocks: "better_fishing" 
+  },
+  "climbing_gear": { 
+    name: "Climbing Gear", 
+    description: "Reduces energy cost when climbing", 
+    price: 200, 
+    effects: {}, 
+    icon: "🧗",
+    consumable: false,
+    unlocks: "efficient_climbing" 
+  },
+  "meditation_mat": { 
+    name: "Meditation Mat", 
+    description: "Enhances meditation effectiveness", 
+    price: 100, 
+    effects: {}, 
+    icon: "🧘",
+    consumable: false,
+    unlocks: "better_meditation" 
+  },
+  "snorkel": { 
+    name: "Snorkel Set", 
+    description: "Swim longer without losing energy", 
+    price: 120, 
+    effects: {}, 
+    icon: "🤿",
+    consumable: false,
+    unlocks: "better_swimming" 
+  }
+};
+
+const shopItems = {
+  "Beach": ["health_potion", "energy_drink", "snorkel"],
+  "Base": ["soap", "happiness_pill"],
+  "Temple": ["meditation_mat", "happiness_pill"],
+  "Mountain": ["climbing_gear", "energy_drink"],
+  "Lake": ["fishing_rod", "health_potion"]
+};
+
+// Player inventory
+let playerInventory = [];
 // === DOM References ===
 const avatarPreview = document.getElementById("avatar-preview");
 const avatarIndex = document.getElementById("avatar-index");
@@ -570,12 +659,380 @@ function leaveArea() {
 
 function performActivity(key) {
   const act = activities[key];
-  if (act.cost > 0 && playerStatus.money < act.cost) return;
-  playerStatus.money -= act.cost;
-  for (const stat in act.effects) {
-    playerStatus[stat] = Math.max(0, Math.min(100, playerStatus[stat] + act.effects[stat]));
+  if (!act) return;
+  
+  // Check if can afford
+  if (act.cost > 0 && playerStatus.money < act.cost) {
+    alert("Not enough money!");
+    return;
   }
+  
+  // Check if already doing an activity
+  if (currentActivity) {
+    alert("You're already busy with another activity!");
+    return;
+  }
+  
+  // Apply item bonuses
+  let modifiedAct = { ...act };
+  
+  // Fishing Rod bonus
+  if (key === "fishing" && hasItem("fishing_rod")) {
+    modifiedAct.effects = { ...modifiedAct.effects, happiness: (modifiedAct.effects.happiness || 0) + 5, hunger: (modifiedAct.effects.hunger || 0) + 10 };
+  }
+  
+  // Climbing Gear bonus (reduces sleep loss)
+  if (key === "climb" && hasItem("climbing_gear")) {
+    modifiedAct.effects = { ...modifiedAct.effects, sleep: Math.max((modifiedAct.effects.sleep || 0) + 10, 0) };
+  }
+  
+  // Meditation Mat bonus
+  if (key === "meditate" && hasItem("meditation_mat")) {
+    modifiedAct.effects = { ...modifiedAct.effects, happiness: (modifiedAct.effects.happiness || 0) + 5, sleep: (modifiedAct.effects.sleep || 0) + 5 };
+  }
+  
+  // Snorkel bonus
+  if (key === "swim" && hasItem("snorkel")) {
+    modifiedAct.effects = { ...modifiedAct.effects, sleep: Math.max((modifiedAct.effects.sleep || 0) + 5, 0) };
+  }
+  
+  // Start the activity
+  startActivity(key, modifiedAct);
+}
+
+function startActivity(key, act) {
+  currentActivity = {
+    key: key,
+    data: act,
+    totalMinutes: act.duration,
+    startX: insideX,
+    startY: insideY
+  };
+  
+  activityStartTime = Date.now();
+  activityElapsedMinutes = 0;
+  
+  // Pay the cost immediately
+  playerStatus.money -= act.cost;
   updateStatusBars();
+  
+  // Show activity UI
+  showActivityUI();
+  
+  // Start gradual stat updates
+  activityInterval = setInterval(updateActivityProgress, 100);
+  
+  // Start animation
+  animateActivity();
+}
+
+function updateActivityProgress() {
+  if (!currentActivity) return;
+  
+  const elapsed = Date.now() - activityStartTime;
+  const totalDuration = currentActivity.totalMinutes * 60 * 1000; // convert minutes to ms
+  const progress = Math.min(elapsed / totalDuration, 1);
+  
+  // Update elapsed minutes for time advancement
+  activityElapsedMinutes = currentActivity.totalMinutes * progress;
+  
+  // Gradually apply effects
+  for (const stat in currentActivity.data.effects) {
+    const totalEffect = currentActivity.data.effects[stat];
+    const currentValue = playerStatus[stat];
+    const targetValue = Math.max(0, Math.min(100, currentValue + totalEffect * progress));
+    
+    // Smoothly interpolate
+    playerStatus[stat] = currentValue + (targetValue - currentValue) * 0.1;
+  }
+  
+  updateStatusBars();
+  updateActivityUI(progress);
+  
+  // Check if complete
+  if (progress >= 1) {
+    completeActivity();
+  }
+}
+
+function completeActivity() {
+  if (!currentActivity) return;
+  
+  // Apply final stat values
+  for (const stat in currentActivity.data.effects) {
+    playerStatus[stat] = Math.max(0, Math.min(100, playerStatus[stat] + currentActivity.data.effects[stat]));
+  }
+  
+  // Advance time by activity duration
+  advanceTime(currentActivity.totalMinutes);
+  
+  // Clean up
+  clearInterval(activityInterval);
+  cancelAnimationFrame(activityAnimationFrame);
+  hideActivityUI();
+  
+  currentActivity = null;
+  activityStartTime = 0;
+  activityElapsedMinutes = 0;
+  
+  updateStatusBars();
+}
+
+function showActivityUI() {
+  if (!currentActivity) return;
+  
+  const ui = document.createElement('div');
+  ui.id = 'activity-ui';
+  ui.className = 'activity-ui-container';
+  ui.innerHTML = `
+    <div class="activity-ui-content">
+      <h3 class="activity-ui-title">${currentActivity.data.name}</h3>
+      <div class="activity-ui-progress-container">
+        <div id="activity-ui-progress-bar" class="activity-ui-progress-bar" style="width: 0%"></div>
+      </div>
+      <p class="activity-ui-time"><span id="activity-ui-time">0</span> / ${currentActivity.totalMinutes} min</p>
+      <button id="fast-forward-btn" class="fast-forward-btn">⚡ Fast Forward</button>
+    </div>
+  `;
+  
+  document.body.appendChild(ui);
+  
+  document.getElementById('fast-forward-btn').addEventListener('click', fastForwardActivity);
+}
+
+function updateActivityUI(progress) {
+  const progressBar = document.getElementById('activity-ui-progress-bar');
+  const timeDisplay = document.getElementById('activity-ui-time');
+  
+  if (progressBar) {
+    progressBar.style.width = (progress * 100) + '%';
+  }
+  
+  if (timeDisplay) {
+    timeDisplay.textContent = Math.floor(activityElapsedMinutes);
+  }
+}
+
+function hideActivityUI() {
+  const ui = document.getElementById('activity-ui');
+  if (ui) {
+    ui.remove();
+  }
+}
+
+function animateActivity() {
+  if (!currentActivity) return;
+  
+  const animate = () => {
+    if (!currentActivity) return;
+    
+    // Simple bobbing animation
+    const time = Date.now() * 0.003;
+    const offsetY = Math.sin(time) * 3;
+    
+    if (insidePlayer) {
+      insidePlayer.style.transform = `translate(-50%, calc(-50% + ${offsetY}px))`;
+    }
+    
+    activityAnimationFrame = requestAnimationFrame(animate);
+  };
+  
+  animate();
+}
+
+function fastForwardActivity() {
+  if (!currentActivity) return;
+  
+  // Instantly apply all effects
+  for (const stat in currentActivity.data.effects) {
+    playerStatus[stat] = Math.max(0, Math.min(100, playerStatus[stat] + currentActivity.data.effects[stat]));
+  }
+  
+  // Advance time by full duration
+  advanceTime(currentActivity.totalMinutes);
+  
+  // Clean up
+  clearInterval(activityInterval);
+  cancelAnimationFrame(activityAnimationFrame);
+  hideActivityUI();
+  
+  currentActivity = null;
+  activityStartTime = 0;
+  activityElapsedMinutes = 0;
+  
+  updateStatusBars();
+}
+function buyItem(itemKey) {
+  const item = items[itemKey];
+  if (!item) return;
+  
+  if (playerStatus.money < item.price) {
+    alert("Not enough money!");
+    return;
+  }
+  
+  playerStatus.money -= item.price;
+  playerInventory.push(itemKey);
+  updateStatusBars();
+  
+  alert(`✅ Purchased ${item.name}!`);
+  
+  // Refresh inventory UI if open
+  if (document.getElementById('inventory-modal')) {
+    showInventory();
+  }
+}
+
+function useItem(itemKey, index) {
+  const item = items[itemKey];
+  if (!item) return;
+  
+  // Apply effects
+  for (const stat in item.effects) {
+    playerStatus[stat] = Math.max(0, Math.min(100, playerStatus[stat] + item.effects[stat]));
+  }
+  
+  // Remove from inventory if consumable
+  if (item.consumable) {
+    playerInventory.splice(index, 1);
+  }
+  
+  updateStatusBars();
+  
+  // Refresh inventory UI
+  showInventory();
+}
+
+function hasItem(itemKey) {
+  return playerInventory.includes(itemKey);
+}
+
+function showShop() {
+  const availableItems = shopItems[currentLocation] || [];
+  
+  if (availableItems.length === 0) {
+    alert("No shop available at this location!");
+    return;
+  }
+  
+  let shopHTML = `
+    <div id="shop-modal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>🏪 Shop - ${currentLocation}</h2>
+          <button onclick="closeShop()" class="close-btn">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="shop-grid">
+  `;
+  
+  availableItems.forEach(itemKey => {
+    const item = items[itemKey];
+    const owned = hasItem(itemKey) && !item.consumable;
+    
+    shopHTML += `
+      <div class="shop-item ${owned ? 'owned' : ''}">
+        <div class="item-icon">${item.icon}</div>
+        <div class="item-info">
+          <h3>${item.name}</h3>
+          <p>${item.description}</p>
+          <div class="item-price">💎 ${item.price}</div>
+        </div>
+        <button 
+          onclick="buyItem('${itemKey}')" 
+          class="buy-btn"
+          ${owned ? 'disabled' : ''}
+        >
+          ${owned ? 'Owned' : 'Buy'}
+        </button>
+      </div>
+    `;
+  });
+  
+  shopHTML += `
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', shopHTML);
+}
+
+function closeShop() {
+  const modal = document.getElementById('shop-modal');
+  if (modal) modal.remove();
+}
+
+function showInventory() {
+  let inventoryHTML = `
+    <div id="inventory-modal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>🎒 Inventory</h2>
+          <button onclick="closeInventory()" class="close-btn">✕</button>
+        </div>
+        <div class="modal-body">
+  `;
+  
+  if (playerInventory.length === 0) {
+    inventoryHTML += `<p class="empty-message">Your inventory is empty. Visit shops to buy items!</p>`;
+  } else {
+    inventoryHTML += `<div class="inventory-grid">`;
+    
+    playerInventory.forEach((itemKey, index) => {
+      const item = items[itemKey];
+      
+      inventoryHTML += `
+        <div class="inventory-item">
+          <div class="item-icon-large">${item.icon}</div>
+          <div class="item-info">
+            <h3>${item.name}</h3>
+            <p>${item.description}</p>
+            ${item.consumable ? 
+              `<button onclick="useItem('${itemKey}', ${index})" class="use-btn">Use</button>` :
+              `<span class="equipped-badge">Equipped</span>`
+            }
+          </div>
+        </div>
+      `;
+    });
+    
+    inventoryHTML += `</div>`;
+  }
+  
+  inventoryHTML += `
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Remove existing modal if any
+  const existingModal = document.getElementById('inventory-modal');
+  if (existingModal) existingModal.remove();
+  
+  document.body.insertAdjacentHTML('beforeend', inventoryHTML);
+}
+
+function closeInventory() {
+  const modal = document.getElementById('inventory-modal');
+  if (modal) modal.remove();
+}
+
+function advanceTime(minutes) {
+  currentMinute += minutes;
+  while (currentMinute >= 60) {
+    currentMinute -= 60;
+    currentHour++;
+  }
+  while (currentHour >= 24) {
+    currentHour -= 24;
+    currentDay++;
+  }
+  
+  gameDayDisplay.textContent = `DAY ${currentDay}`;
+  gameTimeDisplay.textContent = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
+  updateGreeting();
 }
 
 // === MAP SYSTEM ===

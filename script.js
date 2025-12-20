@@ -14,6 +14,15 @@ let activityAnimationFrame = null;
 
 const playerStatus = { hunger: 50, sleep: 50, hygiene: 50, happiness: 50, money: 100 };
 
+// Life Satisfaction Score tracking
+let lifeSatisfactionScore = 0;
+const scoreTracking = {
+  activitiesPerformed: {},
+  itemsUsed: {},
+  areasVisited: new Set(),
+  statBalanceHistory: []
+};
+
 // === Avatar List ===
 const availableAvatars = [
   "images/avatar1.png",
@@ -427,7 +436,6 @@ function renderAreaActivities() {
     marker.src = `https://placehold.co/80x80/2563eb/ffffff?text=${label}`;
 
     // Clicking the circle moves the avatar to that spot.
-    // The activity only happens when the popup button is pressed.
     marker.addEventListener("click", () => {
       animateInsideMoveTo(pos.left, pos.top);
     });
@@ -436,8 +444,6 @@ function renderAreaActivities() {
   });
 
   // --- Exit / Door ---
-  // Base/Home gets a clickable "Door" circle in the middle of the house.
-  // Other areas keep a generic (invisible) exit spot near the bottom center.
   if (currentLocation === "Base") {
     const doorPos = { top: 55, left: 50 };
     currentAreaExit = { x: doorPos.left, y: doorPos.top };
@@ -449,15 +455,28 @@ function renderAreaActivities() {
     door.style.left = doorPos.left + "%";
     door.src = "https://placehold.co/80x80/111827/ffffff?text=Door";
 
-    // Click-to-move instantly to the door
     door.addEventListener("click", () => {
       moveInsideInstantTo(doorPos.left, doorPos.top);
     });
 
     mapArea.appendChild(door);
   } else {
-    // define a generic exit spot near bottom center for leave-area popup
-    currentAreaExit = { x: 50, y: 90 };
+    // FIXED: Add visible exit marker for other locations
+    const exitPos = { top: 90, left: 50 };
+    currentAreaExit = { x: exitPos.left, y: exitPos.top };
+
+    const exitMarker = document.createElement("img");
+    exitMarker.classList.add("map-location", "area-exit");
+    exitMarker.alt = "Exit";
+    exitMarker.style.top = exitPos.top + "%";
+    exitMarker.style.left = exitPos.left + "%";
+    exitMarker.src = "https://placehold.co/80x80/dc2626/ffffff?text=Exit";
+
+    exitMarker.addEventListener("click", () => {
+      animateInsideMoveTo(exitPos.left, exitPos.top);
+    });
+
+    mapArea.appendChild(exitMarker);
   }
 }
 
@@ -490,13 +509,27 @@ function syncWorldPositionToCurrentLocation() {
 }
 
 function moveOnWorld(direction) {
-  const step = 2;
+  const step = 3; // Changed from 2 to 3 (50% faster)
   if (direction === "up") worldY -= step;
   else if (direction === "down") worldY += step;
   else if (direction === "left") worldX -= step;
   else if (direction === "right") worldX += step;
 
   updatePlayerMapPosition();
+}
+
+function moveInside(direction) {
+  // if the player uses manual movement, stop any click-to-move animation
+  cancelInsideMove();
+
+  const step = 3; // Changed from 2 to 3 (50% faster)
+  if (direction === "up") insideY -= step;
+  else if (direction === "down") insideY += step;
+  else if (direction === "left") insideX -= step;
+  else if (direction === "right") insideX += step;
+
+  updateInsidePlayerPosition();
+  checkActivityProximity();
 }
 
 function showEnterLocationPopup(locationKey) {
@@ -616,6 +649,10 @@ function showWorldMap() {
 
 function enterArea() {
   if (isInsideArea) return;
+  
+  // Track area visited for score
+  trackAreaVisited(currentLocation);
+  
   isInsideArea = true;
 
   cancelInsideMove();
@@ -763,6 +800,9 @@ function completeActivity() {
     playerStatus[stat] = Math.max(0, Math.min(100, playerStatus[stat] + currentActivity.data.effects[stat]));
   }
   
+  // Track activity for score
+  trackActivity(currentActivity.key);
+
   // Advance time by activity duration
   advanceTime(currentActivity.totalMinutes);
   
@@ -891,6 +931,9 @@ function useItem(itemKey, index) {
   for (const stat in item.effects) {
     playerStatus[stat] = Math.max(0, Math.min(100, playerStatus[stat] + item.effects[stat]));
   }
+  
+  // Track item used for score
+  trackItemUsed(itemKey);
   
   // Remove from inventory if consumable
   if (item.consumable) {
@@ -1121,7 +1164,15 @@ function checkGameOver() {
 function endGame(reason) {
   clearInterval(gameInterval);
   clearInterval(statusInterval);
+  
+  const finalScore = calculateLifeSatisfactionScore();
+  
   gameOverReason.textContent = `You fainted from ${reason}. You survived ${currentDay} days.`;
+  gameOverReason.innerHTML += `<br><br>🌟 <strong>Final Life Satisfaction Score: ${finalScore}</strong><br>`;
+  gameOverReason.innerHTML += `<small>Activities: ${Object.keys(scoreTracking.activitiesPerformed).length} | `;
+  gameOverReason.innerHTML += `Areas Visited: ${scoreTracking.areasVisited.size} | `;
+  gameOverReason.innerHTML += `Items Used: ${Object.keys(scoreTracking.itemsUsed).length}</small>`;
+  
   gameScreen.classList.add("hidden");
   gameOverScreen.classList.remove("hidden");
 }
@@ -1170,16 +1221,46 @@ playerNameInput.addEventListener("input", () => startButton.disabled = !playerNa
 startButton.addEventListener("click", startGame);
 moveButtons.forEach(btn => btn.addEventListener("click", () => movePlayer(btn.id.split("-")[1])));
 
+// === Continuous Movement System ===
+const keysPressed = new Set();
+let movementInterval = null;
+
 document.addEventListener("keydown", (event) => {
-  const key = event.key;
-  if (key === "ArrowUp") {
-    movePlayer("up");
-  } else if (key === "ArrowDown") {
-    movePlayer("down");
-  } else if (key === "ArrowLeft") {
-    movePlayer("left");
-  } else if (key === "ArrowRight") {
-    movePlayer("right");
+  const key = event.key.toLowerCase();
+  
+  // Check if it's a movement key
+  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(key)) {
+    event.preventDefault(); // Prevent page scrolling
+    keysPressed.add(key);
+    
+    // Start continuous movement if not already running
+    if (!movementInterval) {
+      movementInterval = setInterval(() => {
+        if (keysPressed.has("arrowup") || keysPressed.has("w")) {
+          movePlayer("up");
+        }
+        if (keysPressed.has("arrowdown") || keysPressed.has("s")) {
+          movePlayer("down");
+        }
+        if (keysPressed.has("arrowleft") || keysPressed.has("a")) {
+          movePlayer("left");
+        }
+        if (keysPressed.has("arrowright") || keysPressed.has("d")) {
+          movePlayer("right");
+        }
+      }, 50); // Movement tick every 50ms (faster = smoother)
+    }
+  }
+});
+
+document.addEventListener("keyup", (event) => {
+  const key = event.key.toLowerCase();
+  keysPressed.delete(key);
+  
+  // Stop movement interval when no keys are pressed
+  if (keysPressed.size === 0 && movementInterval) {
+    clearInterval(movementInterval);
+    movementInterval = null;
   }
 });
 
@@ -1188,3 +1269,72 @@ restartButton.addEventListener("click", restartGame);
 // === Initialize App ===
 updateAvatarSelection();
 playerMapIconContainer.style.display = "none";
+
+// === Life Satisfaction Score System ===
+
+function calculateLifeSatisfactionScore() {
+  let score = 0;
+  
+  // 1. Stat Balance Score (max 100 points)
+  const avgStat = (playerStatus.hunger + playerStatus.sleep + playerStatus.hygiene + playerStatus.happiness) / 4;
+  const statVariance = Math.sqrt(
+    (Math.pow(playerStatus.hunger - avgStat, 2) + 
+     Math.pow(playerStatus.sleep - avgStat, 2) + 
+     Math.pow(playerStatus.hygiene - avgStat, 2) + 
+     Math.pow(playerStatus.happiness - avgStat, 2)) / 4
+  );
+  
+  // Reward balanced stats (low variance is good)
+  const balanceScore = Math.max(0, 100 - statVariance);
+  score += balanceScore;
+  
+  // 2. Activities Variety Score (max 150 points)
+  const activityCount = Object.keys(scoreTracking.activitiesPerformed).length;
+  const activityScore = Math.min(150, activityCount * 15);
+  score += activityScore;
+  
+  // 3. Items Used Score (max 100 points)
+  const itemsUsedCount = Object.keys(scoreTracking.itemsUsed).length;
+  const itemScore = Math.min(100, itemsUsedCount * 20);
+  score += itemScore;
+  
+  // 4. Area Exploration Score (max 150 points)
+  const areasVisitedCount = scoreTracking.areasVisited.size;
+  const explorationScore = areasVisitedCount * 30;
+  score += explorationScore;
+  
+  // 5. Survival Bonus (days survived * 10)
+  const survivalBonus = currentDay * 10;
+  score += survivalBonus;
+  
+  return Math.round(score);
+}
+
+function updateLifeSatisfactionScore() {
+  lifeSatisfactionScore = calculateLifeSatisfactionScore();
+  const scoreDisplay = document.getElementById('satisfaction-score');
+  if (scoreDisplay) {
+    scoreDisplay.textContent = lifeSatisfactionScore;
+  }
+}
+
+function trackActivity(activityKey) {
+  if (!scoreTracking.activitiesPerformed[activityKey]) {
+    scoreTracking.activitiesPerformed[activityKey] = 0;
+  }
+  scoreTracking.activitiesPerformed[activityKey]++;
+  updateLifeSatisfactionScore();
+}
+
+function trackItemUsed(itemKey) {
+  if (!scoreTracking.itemsUsed[itemKey]) {
+    scoreTracking.itemsUsed[itemKey] = 0;
+  }
+  scoreTracking.itemsUsed[itemKey]++;
+  updateLifeSatisfactionScore();
+}
+
+function trackAreaVisited(locationKey) {
+  scoreTracking.areasVisited.add(locationKey);
+  updateLifeSatisfactionScore();
+}

@@ -259,6 +259,41 @@
 }
 
 /* ------------------------
+   ACTIVITY BUTTONS
+---------------------------*/
+#activity-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  min-height: 3rem;
+}
+
+.activity-btn {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  transition: all 0.2s ease;
+}
+
+.activity-btn:hover {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+.activity-btn:active {
+  transform: translateY(0);
+}
+
+/* ------------------------
    MISC ELEMENTS
 ---------------------------*/
 button {
@@ -279,7 +314,6 @@ button:active {
   margin: 0 1px;
 }
 
-
 /* Activity markers when inside an area */
 .area-activity {
   cursor: pointer;
@@ -289,6 +323,13 @@ button:active {
   padding: 4px;
 }
 
+.area-exit {
+  cursor: pointer;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
+  padding: 4px;
+}
 
 /* Player avatar when inside an area */
 #inside-player {
@@ -319,6 +360,11 @@ button:active {
   min-width: 8rem;
   box-shadow: 0 4px 10px rgba(15, 23, 42, 0.25);
   border: none;
+  cursor: pointer;
+}
+
+.popup-btn:hover {
+  background-color: #1d4ed8;
 }
 
 /* Activity UI Overlay */
@@ -599,9 +645,15 @@ button:active {
   font-size: 1rem;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+  transition: all 0.2s ease;
 }
 
 .utility-btn:hover {
   background: linear-gradient(135deg, #7c3aed, #6d28d9);
   transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+}
+
+.utility-btn:active {
+  transform: translateY(0);
 }

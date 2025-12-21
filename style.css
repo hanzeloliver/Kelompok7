@@ -334,8 +334,8 @@ button:active {
 /* Player avatar when inside an area */
 #inside-player {
   position: absolute;
-  width: 72px;
-  height: 72px;
+  width: 64px;
+  height: 64px;
   z-index: 6;
   transform: translate(-50%, -50%);
   object-fit: contain;
@@ -656,4 +656,30 @@ button:active {
 
 .utility-btn:active {
   transform: translateY(0);
+}
+
+/* Ensure all avatar images are constrained */
+#avatar-preview,
+#player-map-icon-img,
+#inside-player {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* Specifically constrain the character selection avatar */
+#avatar-preview {
+  width: 128px !important;
+  height: 128px !important;
+}
+
+/* Specifically constrain the world map player icon */
+#player-map-icon-container {
+  width: 60px !important;
+  height: 60px !important;
+}
+
+#player-map-icon-img {
+  width: 50px !important;
+  height: 50px !important;
 }

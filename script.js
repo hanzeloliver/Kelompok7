@@ -1183,7 +1183,10 @@ function startGame() {
   characterSelectionScreen.classList.add("hidden");
   gameScreen.classList.remove("hidden");
 
+  // Force avatar size
   playerMapIconImg.src = playerAvatar;
+  playerMapIconImg.style.width = "50px";
+  playerMapIconImg.style.height = "50px";
 
   // start on world map view
   showWorldMap();
